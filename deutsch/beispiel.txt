@@ -1,0 +1,11 @@
+Beispiel
+
+Bild
+
+Maße
+Höhe	100.34
+Länge	120.89
+
+Information
+Fotograf	Vorname Nachname
+Kamera	Kameramodell
