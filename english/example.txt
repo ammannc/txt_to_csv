@@ -1,0 +1,15 @@
+Example text file
+
+Image
+
+Size
+height	100,34
+width	120.89
+
+Some other information
+height	999
+width	999
+
+Info
+photographer	Some Name
+camera	camera model

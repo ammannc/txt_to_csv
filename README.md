@@ -1,2 +1,2 @@
 # txt_to_csv
- Parses a batch of Textfiles into a single CSV Sheet
+ Parses a batch of Text files into a single CSV Sheet

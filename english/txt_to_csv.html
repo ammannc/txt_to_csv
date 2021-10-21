@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>TXT-CSV Converter</title>
+	<meta charset="UTF-8">
+	
+	<!--[IF IE]><meta http-equiv="refresh" content="0;url=https://www.mozilla.org/de/firefox/new/"><![ENDIF]-->
+	
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+	
+	<style>
+		html {
+			font-size: 12px;
+		}
+	
+		table {
+			white-space: nowrap;
+		}
+		
+		.btn-block {
+			display: block;
+			width: 100%;
+		}
+		
+	</style>
+</head>
+
+<body class="bg-light">
+	
+	<div class="container my-5">
+		
+		<h1>Converter from Textfiles into CSV</h1>
+		<p>This tool converts multiple text files into one CSV sheet for use in MS Excel, Numbers, etc.</p>
+		<hr><br><br>
+		
+		<h5 class="mb-3">Adjust selection</h5>
+		
+		<div class="alert alert-dismissable" id="meldung" role="alert" style="display: none;">
+			Alert
+			<button type="button" onclick="closemessage(this.parentElement);" class="close" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+		</div>
+		
+		<form class="mb-5" id="selection" target="_blank">
+				
+			<div class="form-group mb-3">
+				<div class="input-group">
+					<input type="text" class="form-control" name="suchbegriff" placeholder="1st search term" required="">
+					<input type="text" class="form-control" name="suchbegriff" placeholder="2nd search term (optional)">
+					<input type="text" class="form-control" name="suchbegriff" placeholder="3rd search term (optional)">
+				</div>
+				<small class="form-text text-muted">Provide at least one search term to look for in the text files.</small>
+			</div>
+			
+			<div class="form-group form-row mb-3">
+				<div class="col-2">
+					<input type="text" class="form-control" id="stop" list="stoplist" placeholder="Read-in stop (optional)">
+					<datalist id="stoplist">
+						<option value="\n\n">single empty line</option>
+						<option value="\n\n\n">2 empty lines</option>
+					</datalist>
+				</div>
+				<div class="col-2">
+					<div class="form-group form-row mb-0">
+						<div class="col-auto align-self-center"><label class="ml-2 mb-0" for="searchcol">Column:</label></div>
+						<div class="col"><input type="number" id="searchcol" class="form-control" value="1" step="1" min="1" required=""></div>
+					</div>
+				</div>
+				<div class="col-2">
+					<div class="form-group form-row mb-0">
+						<div class="col-auto align-self-center"><label class="ml-2 mb-0" for="col">Value:</label></div>
+						<div class="col"><input type="number" id="col" class="form-control" value="2" step="1" min="2" required=""></div>
+					</div>
+				</div>
+				<div class="col-3"><input type="text" id="prettyName" class="form-control" placeholder="Unique identifier / Name" required=""></div>
+				<div class="col-1"><button type="button" onclick="del();" class="btn btn-outline-danger btn-block">Del</button></div>
+				<div class="col-1"><button type="button" onclick="edt();" class="btn btn-outline-primary btn-block">Edt</button></div>
+				<div class="col-1"><button type="button" onclick="add();" class="btn btn-outline-primary btn-block">Add</button></div>
+				<div class="col-12"><small class="form-text text-muted">&quot;Column&quot; is for the variable names and &quot;Value&quot; for the corresponding values; in most cases leave it like this</small></div>
+			</div>
+			
+		</form>
+		
+		<h5 class="mb-4">Read files</h5>
+		
+		<input type="file" class="form-control-file mb-3" id="textfiles" accept=".txt" multiple="">
+		
+		<form id="searchterms" target="_blank">
+			
+			<div class="input-group input-group-sm mb-2">
+				<div class="input-group-prepend">
+					<div class="input-group-text">
+						<input id="example_search_block" type="checkbox" name="blocks" data-start="Image,Size" data-stop="\n\n" data-search-col="1" data-col="2" checked="checked">
+					</div>
+					<span class="input-group-text">Example Search Block</span>
+				</div>
+				<input type="text" class="form-control subsearch" value="height, width">
+				<div class="input-group-append">
+					<button class="btn btn-outline-secondary" type="button" onclick="moveup(this.parentElement.parentElement);">&uarr;</button>
+					<button class="btn btn-outline-secondary" type="button" onclick="movedown(this.parentElement.parentElement);">&darr;</button>
+					<button class="btn btn-outline-secondary" type="button" onclick="bearbeiten('example_search_block');">Edit</button>
+				</div>
+			</div>
+			
+			<div class="input-group input-group-sm mb-2">
+				<div class="input-group-prepend">
+					<div class="input-group-text">
+						<input id="example_search_block_2" type="checkbox" name="blocks" data-start="Image,Info" data-stop="\n\n" data-search-col="1" data-col="2" checked="checked">
+					</div>
+					<span class="input-group-text">Example Search Block 2</span>
+				</div>
+				<input type="text" class="form-control subsearch" value="photographer, camera">
+				<div class="input-group-append">
+					<button class="btn btn-outline-secondary" type="button" onclick="moveup(this.parentElement.parentElement);">&uarr;</button>
+					<button class="btn btn-outline-secondary" type="button" onclick="movedown(this.parentElement.parentElement);">&darr;</button>
+					<button class="btn btn-outline-secondary" type="button" onclick="bearbeiten('example_search_block_2');">Edit</button>
+				</div>
+			</div>
+			
+		</form>
+		
+		<div class="form-row mt-4 justify-content-start">
+			<div class="col-auto"><button type="button" class="btn btn-outline-primary" onclick="daten_sammeln()">Gather data</button></div>
+			<div class="col-auto"><button type="button" class="btn btn-outline-primary" onclick="export_table()">Export CSV</button></div>
+			<div class="col-auto ml-auto"><button type="button" class="btn btn-outline-primary" onclick="save_changes()">Save search in new file</button></div>
+		</div>
+		
+	</div>
+	
+	<div class="container table-responsive">
+		<h5>Preview</h5>
+		<table class="table table-hover">
+			<thead id="thead"></thead>
+			<tbody id="tbody"></tbody>
+		</table>
+	</div><br><br>
+	
+	<div class="container">
+		<h5>Error Log</h5>
+		<pre id="suchlog"></pre>
+	</div><br><br>
+	
+	<script>
+	
+	const searchterms = document.getElementById('searchterms'); 
+	const file_input = document.getElementById('textfiles');
+	const thead      = document.getElementById('thead');
+	const tbody      = document.getElementById('tbody');
+	const suchlog    = document.getElementById('suchlog');
+	
+	let csvContent   = 'data:application/csv;charset=utf-8,';
+	let reihenfolge  = new Array();
+	let search       = new Object();
+	
+	var autoclose;
+
+	function daten_sammeln() {
+		
+		const checkedBoxes = document.querySelectorAll('input[name=blocks]:checked');
+		const textfiles    = file_input.files;
+		csvContent         = 'data:application/csv;charset=utf-8,';		// reset
+		reihenfolge        = [];										// reset
+		search             = {};
+		
+		checkedBoxes.forEach(checkedBox => {
+			const cblabel   = checkedBox.parentElement.nextElementSibling.innerText.trim();
+			const subsearch = checkedBox.parentElement.parentElement.nextElementSibling.value;
+			reihenfolge.push(cblabel);																				// Objects have no order, so create an Array for sorting
+			search[cblabel]           = new Object();
+			search[cblabel].subsearch = subsearch.split(',').map(i => {return i.trim()}).filter(i => {return i});	// subsearch string into array, trim and filter empty out
+			search[cblabel].start     = checkedBox.dataset.start;
+			search[cblabel].stop      = checkedBox.dataset.stop.replace(/\\n/g, '\n');								// replace escape characters
+			search[cblabel].col       = checkedBox.dataset.col - 1;
+			search[cblabel].searchcol = checkedBox.dataset.searchCol - 1;
+		});
+		
+		print_header(search);
+		
+		for (var i = 0; i < textfiles.length; i++) {
+			let reader = new FileReader();
+			reader.onload = function (e) {
+				const text  = e.target.result;
+				const group = new Object();
+				
+				for (var s in search) {																			// for all search blocks
+					console.log(search[s])
+					let vals  = get_values(text, search[s].start.split(','), search[s].stop, search[s].searchcol, search[s].col, reader.filename, s);
+					let results = new Array();
+					search[s].subsearch.forEach(key => {results.push(vals[key])});									// limit to parameters in search block
+					group[s] = new Object();
+					group[s] = results;
+				}
+				print_output(reader.filename, group);
+			};
+			reader.filename = textfiles[i].name;
+			reader.readAsText(textfiles[i]);
+		}		
+	}
+	
+	function get_values(str, start, stop='', searchcol='0', col='1', filename='Fehler', suchblock='Fehler', delimiter='\t') {
+		start.forEach(val => {
+			str = str.slice(str.indexOf(val));			// Nicht optimal, aber schnell und stabil genug.
+			if (str.indexOf(val) == -1) suchlog.insertAdjacentHTML('beforeend', '<span class="text-warning font-weight-bold">'+ filename +':</span> &quot;'+ val +'&quot; from search block ['+ suchblock +'] was not found.<br>');
+		});
+		if (stop) str = str.slice(0, str.indexOf(stop));
+		
+		let rows  = str.split('\n').map(row => {
+			const vals = row.split(delimiter);
+			return (vals[searchcol] && typeof vals[col] !== 'undefined' && vals[col] !== '--') ? {key: vals[searchcol], value: vals[col].trim()} : '';
+		});
+		rows = rows.filter(i => i); // remove empty items from array
+		
+		return rows.reduce((obj, item) => {
+			if (item.key in obj) suchlog.insertAdjacentHTML('beforeend', '<span class="text-danger font-weight-bold">'+ filename +':</span> &quot;'+ item.key +'&quot; from search block ['+ suchblock +'] was found more than once and will be overwritten<br>');
+			return obj[item.key] = item.value, obj;
+		}, {});
+	}
+	
+	function print_header(blocks) {
+		let tr1 = '<tr><td></td>', tr2 = '<tr class="bg-dark text-white"><th scope="col">File</th>';
+		let csvContent1 = '', csvContent2 = 'File';
+		
+		for (const block of reihenfolge) {
+			if (blocks[block].subsearch.length > 0) {
+				tr1 += '<td colspan="' + blocks[block].subsearch.length + '">' + block + '</td>';
+				csvContent1 += ',' + block + ','.repeat(blocks[block].subsearch.length-1);
+				csvContent2 += ',' + blocks[block].subsearch.join(',');
+				for (const key of blocks[block].subsearch) {tr2 += '<th scope="col">' + key + '</th>';}
+			}
+		}
+		
+		csvContent += csvContent1 + '\r\n' + csvContent2 + '\r\n';
+		thead.innerHTML = tr1 + '</tr>' + tr2 + '</tr>';
+		tbody.innerHTML = '', suchlog.innerHTML = '';		// reset table and error log
+	}
+	
+	function print_output(group, blocks) {
+		let tr = '<tr><th scope="row">' + group + '</th>';
+		csvContent += group;
+		
+		for (const block of reihenfolge) {
+			if (blocks[block].length > 0) {
+				blocks[block].forEach((el, i) => {
+					tr += '<td>' + el + '</td>';
+					blocks[block][i] = blocks[block][i].replace(/\,/g, '.');
+				});
+				csvContent += ',' + blocks[block].join(',');	// english excel delimiters and number format
+			}
+		}
+		
+		csvContent += '\r\n';
+		tbody.insertAdjacentHTML('beforeend', tr + '</tr>');
+	}
+	
+	function export_table() {
+		let link = document.getElementById('csvlink') ? document.getElementById('csvlink') : document.createElement("a");
+		link.setAttribute('id', 'csvlink');
+		link.setAttribute('href', encodeURI(csvContent));
+		link.setAttribute('download', 'data.csv');
+		document.body.appendChild(link);
+		link.click();
+	}
+	
+	function save_changes() {		
+		tbody.innerHTML = '', thead.innerHTML = '', suchlog.innerHTML = '';						// Clear Output
+		if (document.getElementById('csvlink')) document.getElementById('csvlink').remove();	// remove CSV Link
+		closemessage(document.getElementById('meldung'));										// Fehlermeldungen schliessen
+		
+		document.querySelectorAll('input.subsearch').forEach(input => {input.setAttribute('value', input.value); input.placeholder = '';});		// Write user input to DOM
+		document.querySelectorAll('input[type=checkbox]:checked').forEach(input => {input.setAttribute('checked', 'checked')});
+		document.querySelectorAll('input[type=checkbox]:not(:checked)').forEach(input => {input.removeAttribute('checked')});
+		
+		let link = document.getElementById('htmllink') ? document.getElementById('htmllink') : document.createElement("a");		// create or update existing link
+		link.setAttribute('id', 'htmllink');
+		link.setAttribute('href', 'data:text/html;charset=utf-8,' + encodeURI('<!DOCTYPE html>\n') + encodeURI(document.documentElement.outerHTML));
+		link.setAttribute('download', 'txt_zu_csv_neu.html');
+		document.body.appendChild(link);
+		link.click();
+	}
+	
+	function showmessage(text, art="alert-danger") {
+		clearTimeout(autoclose);
+		const meldung = document.getElementById('meldung');
+		meldung.className = 'alert alert-dismissable ' + art;
+		meldung.firstChild.nodeValue = text;
+		meldung.style.display = 'block';
+		autoclose = setTimeout(function() {closemessage(meldung)}, 4000);
+	}
+	
+	function closemessage(el) {
+		el.style.display = 'none';
+		el.className = '';
+	}
+	
+	document.getElementById('selection').addEventListener('submit', function (e) { e.preventDefault() });
+	
+	function bearbeiten(id) {
+		
+		const checkBox = document.getElementById(id);
+		const start    = checkBox.dataset.start.split(',');
+		const sbs      = document.getElementsByName('suchbegriff');
+		
+		sbs.forEach((sb, i) => {
+			if (start[i]) sb.value = start[i];
+			else sb.value = '';
+		});
+			
+		document.getElementById('stop').value       = checkBox.dataset.stop;
+		document.getElementById('col').value        = checkBox.dataset.col;
+		document.getElementById('searchcol').value  = checkBox.dataset.searchCol;
+		document.getElementById('prettyName').value = checkBox.parentElement.nextElementSibling.innerText;
+		
+	}
+	
+	function add() {
+		
+		const sbs  = document.getElementsByName('suchbegriff');
+		const stop = document.getElementById('stop').value;
+		const col  = document.getElementById('col').value;
+		const scol = document.getElementById('searchcol').value;
+		const pN   = document.getElementById('prettyName').value.trim();
+		const id   = pN.toLowerCase().replace(/\s+/g, '_');
+		let start  = new Array();
+		let html   = new String();
+		
+		if (!sbs[0].value) {showmessage('Please provide at least one search term.'); return;}
+		if (!pN) {showmessage('Please provide a unique identifier for this search block.'); return;}
+		if (document.getElementById(id)) {showmessage('The id of this search block already exists and has to be unique. Please choose another identifier.'); return;}
+		if (col == scol) {showmessage('The Column for variable name and value should not be equal.', 'alert-warning'); return;}
+		
+		sbs.forEach(sb => {if (sb.value) start.push(sb.value.trim())});
+		
+		html += '	<div class="input-group input-group-sm mb-2">\n';
+		html += '\t\t\t	<div class="input-group-prepend">\n';
+		html += '\t\t\t		<div class="input-group-text">\n';
+		html += '\t\t\t			<input id="'+ id +'" type="checkbox" name="blocks" data-start="'+ start.join(',') +'" data-stop="'+ stop +'" data-search-col="'+ scol +'" data-col="'+ col +'">\n';
+		html += '\t\t\t		</div>\n';
+		html += '\t\t\t		<span class="input-group-text">'+ pN +'</span>\n';
+		html += '\t\t\t	</div>\n';
+		html += '\t\t\t	<input type="text" class="form-control subsearch" placeholder="Comma separated list of all values of interest (exactly like in the text file).">\n';
+		html += '\t\t\t	<div class="input-group-append">\n';
+		html += "\t\t\t		<button class=\"btn btn-outline-secondary\" type=\"button\" onclick=\"moveup(this.parentElement.parentElement);\">&uarr;</button>\n";
+		html += "\t\t\t		<button class=\"btn btn-outline-secondary\" type=\"button\" onclick=\"movedown(this.parentElement.parentElement);\">&darr;</button>\n";
+		html += "\t\t\t		<button class=\"btn btn-outline-secondary\" type=\"button\" onclick=\"bearbeiten('"+ id +"');\">Edit</button>\n"
+		html += '\t\t\t	</div>\n';
+		html += '\t\t	</div>\n\n\t\t';
+		
+		searchterms.insertAdjacentHTML('beforeend', html);
+		if (!stop) showmessage('All textfiles will be read until their end. Please provide a search stop (e.g. \\n\\n for one empty line).', 'alert-info');
+		else showmessage('Search block successfully added!', 'alert-success');
+		document.getElementById('selection').reset();
+		
+	}
+	
+	function edt() {
+		
+		const sbs  = document.getElementsByName('suchbegriff');
+		const stop = document.getElementById('stop').value;
+		const col  = document.getElementById('col').value;
+		const scol = document.getElementById('searchcol').value;
+		const pN   = document.getElementById('prettyName').value.trim();
+		const id   = pN.toLowerCase().replace(/\s+/g, '_');
+		let start  = new Array();
+		
+		if (!pN) {showmessage('Please choose a search block using the edit button on its right.'); return;}
+		if (!sbs[0].value) {showmessage('Please provide at least one search term.'); return;}
+		if (col == scol) {showmessage('The Column for variable name and value should not be equal.', 'alert-warning'); return;}
+		
+		sbs.forEach(sb => {if (sb.value) start.push(sb.value.trim())});
+		
+		const checkBox = document.getElementById(id);
+		
+		if (checkBox) {
+			checkBox.setAttribute('data-start', start.join(','));
+			checkBox.setAttribute('data-stop', stop);
+			checkBox.setAttribute('data-col', col);
+			checkBox.setAttribute('data-search-col', scol);
+			showmessage('Search block successfully edited!', 'alert-success');
+		} else showmessage('The identifier for this search block has to be unique and cannot be changed. Please delete the block and add a new one instead.');
+		
+		document.getElementById('selection').reset();
+		
+	}
+	
+	function del() {
+		
+		const pN    = document.getElementById('prettyName').value.trim();
+		const id    = pN.toLowerCase().replace(/\s+/g, '_');
+		const checkbox = document.getElementById(id);
+		
+		if (checkbox && checkbox.closest('div.input-group')) {
+			checkbox.closest('div.input-group').remove();
+			showmessage('Search block successfully deleted!', 'alert-success');
+		} else showmessage('Please provide the unique identifier of the search block, you wish to delete.');
+		
+		document.getElementById('selection').reset();
+		
+	}
+	
+	function moveup(el) {
+		if (el.previousElementSibling) searchterms.insertBefore(el, el.previousElementSibling);
+	}
+	
+	function movedown(el) {
+		if (el.nextElementSibling) searchterms.insertBefore(el, el.nextElementSibling.nextElementSibling);
+	}
+	
+	</script>
+
+</body>
+
+</html>
